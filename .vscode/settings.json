@@ -12,5 +12,6 @@
         "conninfo",
         "migr",
         "yoyo"
-    ]
+    ],
+    "chat.permissions.default": "autoApprove"
 }
