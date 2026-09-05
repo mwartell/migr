@@ -1,21 +1,47 @@
 """Manage a connection to the migr postgres database."""
 
 from contextlib import contextmanager
-from typing import Any, Self
+from typing import Self
 
 import psycopg
+from alembic.config import Config
+from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
+from sqlalchemy import URL
+
+from alembic import command
+from migr import PROJECT_ROOT
 
 DEFAULT_DSN = "dbname=migr"
+ALEMBIC_DIR = PROJECT_ROOT / "alembic"
 
-CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS people (
-    id         SERIAL PRIMARY KEY,
-    first_name TEXT NOT NULL,
-    last_name  TEXT NOT NULL,
-    occupation TEXT NOT NULL
-)
-"""
+
+def migrate(dsn: str = DEFAULT_DSN) -> None:
+    """Apply any pending Alembic migrations."""
+    info = conninfo_to_dict(dsn)
+    connection_keys = {"dbname", "host", "password", "port", "user"}
+    username = info.get("user")
+    password = info.get("password")
+    host = info.get("host")
+    port = info.get("port")
+    database = info.get("dbname")
+    url = URL.create(
+        "postgresql+psycopg",
+        username=username if isinstance(username, str) else None,
+        password=password if isinstance(password, str) else None,
+        host=host if isinstance(host, str) else None,
+        port=int(port) if isinstance(port, str | int) else None,
+        database=database if isinstance(database, str) else None,
+        query={
+            key: str(value)
+            for key, value in info.items()
+            if key not in connection_keys and value is not None
+        },
+    )
+    config = Config()
+    config.set_main_option("script_location", str(ALEMBIC_DIR))
+    config.set_main_option("sqlalchemy.url", url.render_as_string(hide_password=False))
+    command.upgrade(config, "head")
 
 
 class Database:
@@ -27,16 +53,11 @@ class Database:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, *_dummy: object) -> None:
         self.close()
 
     def close(self) -> None:
         self._conn.close()
-
-    def create_people_table(self) -> None:
-        """Create the people (id, first_name, last_name, occupation) table."""
-        with self._conn.cursor() as cur:
-            cur.execute(CREATE_TABLE_SQL)
 
     @contextmanager
     def cursor(self):

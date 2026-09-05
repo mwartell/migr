@@ -7,5 +7,10 @@
         "titleBar.activeForeground": "#000000",
         "titleBar.inactiveForeground": "#000000",
         "activityBar.foreground": "#000000"
-    }
+    },
+    "cSpell.words": [
+        "conninfo",
+        "migr",
+        "yoyo"
+    ]
 }
