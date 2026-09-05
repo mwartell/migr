@@ -43,10 +43,15 @@ def upgrade() -> None:
         ADD CONSTRAINT shortlist_people_id_fkey
         FOREIGN KEY (people_id) REFERENCES people (id)
     """)
+    op.execute("""
+        ALTER TABLE shortlist
+        ADD CONSTRAINT shortlist_people_id_key UNIQUE (people_id)
+    """)
 
 
 def downgrade() -> None:
     op.execute("ALTER TABLE shortlist DROP CONSTRAINT shortlist_people_id_fkey")
+    op.execute("ALTER TABLE shortlist DROP CONSTRAINT shortlist_people_id_key")
     op.execute("ALTER TABLE people DROP CONSTRAINT people_pkey")
     op.execute("ALTER TABLE people ADD COLUMN old_id TEXT")
     op.execute("""
