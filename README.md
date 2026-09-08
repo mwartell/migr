@@ -2,6 +2,10 @@
 
 # table rekeying with alembic migrations
 
+We've hit a snag in changing the effective primary key of a database table. For deduplication purposes, the key of a table was formed as a custom hash of some of its fields. As the scope of this table changed in early development we decided we needed to add more fields to the hash. This could be treated as a normal migration except that another table references that hash. This note explores the proper way to handle migration of both tables. It advocates for the use of a standard python database migration manager [Alembic](https://github.com/sqlalchemy/alembic).
+
+# running the demo
+
 Begin with `uv sync` in the project root and activate the .venv in your favorite way. This will get you the `alembic` migration cli and the `migr` tool which dumps the current database.
 
 Running the demo requires a running local postgres with null credentials
